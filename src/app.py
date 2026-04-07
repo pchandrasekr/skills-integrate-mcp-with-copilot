@@ -10,26 +10,33 @@ Now uses SQLite database for persistent storage instead of in-memory data.
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from contextlib import asynccontextmanager
 import os
 from pathlib import Path
+from datetime import datetime
 from sqlalchemy.orm import Session
 
-from database import init_db, populate_initial_data, get_db, Activity, ActivityParticipant, Match, MatchResult, Leaderboard
+from .database import init_db, populate_initial_data, get_db, Activity, ActivityParticipant, Match, MatchResult, Leaderboard
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan events (startup and shutdown)"""
+    # Startup event
+    init_db()
+    populate_initial_data()
+    yield
+    # Shutdown event (cleanup if needed)
+
 
 app = FastAPI(title="Mergington High School API",
-              description="API for viewing and signing up for extracurricular activities")
+              description="API for viewing and signing up for extracurricular activities",
+              lifespan=lifespan)
 
 # Mount the static files directory
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
-
-# Initialize database on startup
-@app.on_event("startup")
-def startup_event():
-    """Initialize database and populate with initial data"""
-    init_db()
-    populate_initial_data()
 
 
 @app.get("/")
