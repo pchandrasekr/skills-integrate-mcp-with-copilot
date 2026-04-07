@@ -3,7 +3,7 @@ Database configuration and models for the activities management system.
 Uses SQLite with SQLAlchemy ORM for persistent storage.
 """
 
-from sqlalchemy import create_engine, Column, String, Integer, DateTime
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -45,6 +45,51 @@ class ActivityParticipant(Base):
     activity_id = Column(Integer, index=True)
     email = Column(String, index=True)
     signup_date = Column(DateTime, default=datetime.utcnow)
+
+
+class Match(Base):
+    """Database model for matches/competitions"""
+    __tablename__ = "matches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    activity_id = Column(Integer, index=True)
+    activity_name = Column(String, index=True)
+    match_date = Column(DateTime, index=True)
+    location = Column(String)
+    home_team = Column(String)
+    away_team = Column(String)
+    status = Column(String, default="scheduled")  # scheduled, completed, cancelled
+    notes = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class MatchResult(Base):
+    """Database model for match results and scores"""
+    __tablename__ = "match_results"
+
+    id = Column(Integer, primary_key=True, index=True)
+    match_id = Column(Integer, index=True)
+    home_score = Column(Integer, nullable=True)
+    away_score = Column(Integer, nullable=True)
+    winner = Column(String, nullable=True)  # home, away, or tie
+    recorded_by = Column(String)  # email of person recording result
+    recorded_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Leaderboard(Base):
+    """Database model for competition standings/leaderboard"""
+    __tablename__ = "leaderboard"
+
+    id = Column(Integer, primary_key=True, index=True)
+    activity_name = Column(String, index=True)
+    team_name = Column(String, index=True)
+    wins = Column(Integer, default=0)
+    losses = Column(Integer, default=0)
+    ties = Column(Integer, default=0)
+    points_for = Column(Integer, default=0)
+    points_against = Column(Integer, default=0)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 def init_db():
